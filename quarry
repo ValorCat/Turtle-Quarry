@@ -1,0 +1,86 @@
+
+local tArgs = {...}
+local tDim = {}
+local tPos = {}
+tDim.row = tArgs[1]
+tDim.col = tArgs[2]
+tDim.lay = tArgs[3]
+tPos.row = 0
+tPos.col = 1
+tPos.lay = 1
+
+local function turtle.turnAround()
+	return turtle.turnLeft() and turtle.turnLeft()
+end
+
+local function move(sFunc, sDir, nAmt)
+	if not turtle[sFunc]() then
+		print("Failed to move turtle")
+		error("", 0)
+	end
+	tPos[sDir] = tPos[sDir] + (nAmt or 1)
+end
+
+local function mineRow(_bMineUp, _bMineDown)
+	while tPos.row < tDim.row do
+		if _bMineUp then
+			turtle.digUp()
+		end
+		if _bMineDown then
+			turtle.digDown()
+		end
+		turtle.dig()
+		move("forward", "row")
+	end
+end
+
+local function mineLayer(_bMineUp, _bMineDown)
+	while tPos.col < tDim.col do
+		mineRow(_bMineUp, _bMineDown)
+		local sDir = tPos.col % 2 == 1 and "turnRight" or "turnLeft"
+		turtle[sDir]()
+		turtle.dig()
+		move("forward", "col")
+		tPos.row = 1
+		turtle[sDir]()
+	end
+end
+
+local function mineQuarry()
+	mineLayer(true, true)
+	while tPos.lay < tDim.lay - 1 do
+		turtle.turnAround()
+		move("down", "lay")
+		turtle.digDown()
+		move("down", "lay")
+		tPos.row = 1
+		tPos.col = 1
+		if tPos.lay == tDim.lay then
+			mineLayer(false, false)
+		elseif tPos.lay == tDim.lay - 1 then
+			mineLayer(false, true)
+		else
+			turtle.digDown()
+			move("down", "lay")
+			mineLayer(true, true)
+		end
+	end
+end
+
+turtle.dig()
+move("forward", "row")
+if tDim.lay > 1 then
+	move("down", "lay")
+end
+mineQuarry()
+
+turtle.turnLeft()
+for nColumn = 1, tDim.col do
+	move("forward", "col")
+end
+for nRow = 1, tDim.row do
+	move("forward", "row")
+end
+for nLayer = 1, tDim.lay do
+	move("up", "lay")
+end
