@@ -2,47 +2,66 @@
 local tArgs = {...}
 local tDim = {}
 local tPos = {}
-tDim.row = tArgs[1]
-tDim.col = tArgs[2]
-tDim.lay = tArgs[3]
+tDim.row = tonumber(tArgs[1])
+tDim.col = tonumber(tArgs[2])
+tDim.lay = tonumber(tArgs[3])
 tPos.row = 0
 tPos.col = 1
 tPos.lay = 1
 
-local function turtle.turnAround()
+local function displayPos()
+	term.clear()
+	term.setCursorPos(1, 1)
+	print("Dimensions: ", tDim.lay, ", ", tDim.col, ", ", tDim.row)
+	print("Coordinates: ", tPos.lay, ", ", tPos.col, ", ", tPos.row)
+end
+
+function turtle.turnAround()
 	return turtle.turnLeft() and turtle.turnLeft()
 end
 
-local function move(sFunc, sDir, nAmt)
-	if not turtle[sFunc]() then
-		print("Failed to move turtle")
-		error("", 0)
+local function move(_sFunc, _sDir, _nAmt)
+	if not turtle[_sFunc]() then
+		displayPos()
+		error("Failed to move turtle", 2)
 	end
-	tPos[sDir] = tPos[sDir] + (nAmt or 1)
+	tPos[_sDir] = tPos[_sDir] + (_nAmt or 1)
+	displayPos()
+end
+
+local function upAndDown(_bMineUp, _bMineDown)
+	if _bMineUp then
+		turtle.digUp()
+	end
+	if _bMineDown then
+		turtle.digDown()
+	end
 end
 
 local function mineRow(_bMineUp, _bMineDown)
 	while tPos.row < tDim.row do
-		if _bMineUp then
-			turtle.digUp()
-		end
-		if _bMineDown then
-			turtle.digDown()
-		end
+		upAndDown(_bMineUp, _bMineDown)
 		turtle.dig()
 		move("forward", "row")
 	end
 end
 
 local function mineLayer(_bMineUp, _bMineDown)
-	while tPos.col < tDim.col do
+	while tPos.col <= tDim.col do
 		mineRow(_bMineUp, _bMineDown)
-		local sDir = tPos.col % 2 == 1 and "turnRight" or "turnLeft"
-		turtle[sDir]()
-		turtle.dig()
-		move("forward", "col")
-		tPos.row = 1
-		turtle[sDir]()
+		if tPos.col < tDim.col then
+			local sDir = tPos.col % 2 == 1 and "turnRight" or "turnLeft"
+			turtle[sDir]()
+			upAndDown(_bMineUp, _bMineDown)
+			turtle.dig()
+			move("forward", "col")
+			tPos.row = 1
+			displayPos()
+			turtle[sDir]()
+		else
+			upAndDown(_bMineUp, _bMineDown)
+			break
+		end
 	end
 end
 
@@ -55,6 +74,7 @@ local function mineQuarry()
 		move("down", "lay")
 		tPos.row = 1
 		tPos.col = 1
+		displayPos()
 		if tPos.lay == tDim.lay then
 			mineLayer(false, false)
 		elseif tPos.lay == tDim.lay - 1 then
@@ -70,10 +90,12 @@ end
 turtle.dig()
 move("forward", "row")
 if tDim.lay > 1 then
+	turtle.digDown()
 	move("down", "lay")
 end
 mineQuarry()
 
+--[[
 turtle.turnLeft()
 for nColumn = 1, tDim.col do
 	move("forward", "col")
@@ -84,3 +106,4 @@ end
 for nLayer = 1, tDim.lay do
 	move("up", "lay")
 end
+]]
